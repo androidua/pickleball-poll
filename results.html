@@ -100,6 +100,7 @@
             gap: 15px;
             margin-top: 30px;
             justify-content: center;
+            flex-wrap: wrap;
         }
         
         .btn {
@@ -131,14 +132,55 @@
             background: #dc3545;
             color: white;
         }
+        
+        .config-notice {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #856404;
+        }
+        
+        .config-notice strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 18px;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="config-notice" id="configNotice" style="display: none;">
+            <strong>⚠️ Configuration Required</strong>
+            Please edit this file and add your JSONBin.io API key and bin ID. See README for instructions.
+        </div>
+        
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+        
         <h1>Poll Results</h1>
         <p class="subtitle">What matters most when choosing a pickleball venue?</p>
         
-        <div class="total-votes" id="totalVotes">Total Votes: 0</div>
+        <div class="loading" id="loading">Loading results...</div>
+        
+        <div class="total-votes" id="totalVotes" style="display: none;">Total Votes: 0</div>
         
         <div id="results"></div>
         
@@ -150,48 +192,119 @@
     </div>
 
     <script>
-        function displayResults() {
-            const votes = JSON.parse(localStorage.getItem('pollVotes')) || {
-                "Court quality": 0,
-                "Location convenience": 0,
-                "Price or affordability": 0,
-                "Social atmosphere": 0,
-                "Coaching or events availability": 0
-            };
-            
-            const totalVotes = Object.values(votes).reduce((a, b) => a + b, 0);
-            
-            document.getElementById('totalVotes').textContent = `Total Votes: ${totalVotes}`;
-            
-            const resultsDiv = document.getElementById('results');
-            resultsDiv.innerHTML = '';
-            
-            Object.entries(votes).forEach(([option, count]) => {
-                const percentage = totalVotes > 0 ? ((count / totalVotes) * 100).toFixed(1) : 0;
+        // ========================================
+        // CONFIGURATION - EDIT THESE VALUES (MUST MATCH index.html)
+        // ========================================
+        const CONFIG = {
+            JSONBIN_API_KEY: 'YOUR_API_KEY_HERE', // Get from https://jsonbin.io
+            BIN_ID: 'YOUR_BIN_ID_HERE' // Your bin ID after creating it
+        };
+        // ========================================
+        
+        const API_URL = `https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}`;
+        
+        // Check if configured
+        if (CONFIG.JSONBIN_API_KEY === 'YOUR_API_KEY_HERE' || CONFIG.BIN_ID === 'YOUR_BIN_ID_HERE') {
+            document.getElementById('configNotice').style.display = 'block';
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        async function getVotes() {
+            try {
+                const response = await fetch(API_URL + '/latest', {
+                    headers: {
+                        'X-Master-Key': CONFIG.JSONBIN_API_KEY
+                    }
+                });
                 
-                const resultItem = document.createElement('div');
-                resultItem.className = 'result-item';
-                resultItem.innerHTML = `
-                    <div class="result-header">
-                        <span class="option-name">${option}</span>
-                        <span class="vote-count">${count} vote${count !== 1 ? 's' : ''}</span>
-                    </div>
-                    <div class="bar-container">
-                        <div class="bar" style="width: ${percentage}%">
-                            <span class="percentage">${percentage}%</span>
+                if (!response.ok) {
+                    throw new Error('Failed to fetch votes');
+                }
+                
+                const data = await response.json();
+                return data.record;
+            } catch (error) {
+                console.error('Error fetching votes:', error);
+                throw error;
+            }
+        }
+        
+        async function updateVotes(votes) {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': CONFIG.JSONBIN_API_KEY
+                    },
+                    body: JSON.stringify(votes)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to update votes');
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Error updating votes:', error);
+                return false;
+            }
+        }
+        
+        async function displayResults() {
+            if (CONFIG.JSONBIN_API_KEY === 'YOUR_API_KEY_HERE' || CONFIG.BIN_ID === 'YOUR_BIN_ID_HERE') {
+                return;
+            }
+            
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('errorMessage').style.display = 'none';
+                
+                const votes = await getVotes();
+                
+                document.getElementById('loading').style.display = 'none';
+                
+                const totalVotes = Object.values(votes).reduce((a, b) => a + b, 0);
+                
+                const totalVotesDiv = document.getElementById('totalVotes');
+                totalVotesDiv.textContent = `Total Votes: ${totalVotes}`;
+                totalVotesDiv.style.display = 'block';
+                
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = '';
+                
+                Object.entries(votes).forEach(([option, count]) => {
+                    const percentage = totalVotes > 0 ? ((count / totalVotes) * 100).toFixed(1) : 0;
+                    
+                    const resultItem = document.createElement('div');
+                    resultItem.className = 'result-item';
+                    resultItem.innerHTML = `
+                        <div class="result-header">
+                            <span class="option-name">${option}</span>
+                            <span class="vote-count">${count} vote${count !== 1 ? 's' : ''}</span>
                         </div>
-                    </div>
-                `;
-                
-                resultsDiv.appendChild(resultItem);
-            });
+                        <div class="bar-container">
+                            <div class="bar" style="width: ${percentage}%">
+                                <span class="percentage">${percentage}%</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    resultsDiv.appendChild(resultItem);
+                });
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.textContent = 'Failed to load results. Please check your configuration and try again.';
+                errorDiv.style.display = 'block';
+            }
         }
         
         function refreshResults() {
             displayResults();
         }
         
-        function resetPoll() {
+        async function resetPoll() {
             if (confirm('Are you sure you want to reset all poll data? This cannot be undone.')) {
                 const initialVotes = {
                     "Court quality": 0,
@@ -200,16 +313,22 @@
                     "Social atmosphere": 0,
                     "Coaching or events availability": 0
                 };
-                localStorage.setItem('pollVotes', JSON.stringify(initialVotes));
-                displayResults();
+                
+                const success = await updateVotes(initialVotes);
+                
+                if (success) {
+                    displayResults();
+                } else {
+                    alert('Failed to reset poll. Please try again.');
+                }
             }
         }
         
         // Display results on load
         displayResults();
         
-        // Auto-refresh every 5 seconds
-        setInterval(displayResults, 5000);
+        // Auto-refresh every 10 seconds
+        setInterval(displayResults, 10000);
     </script>
 </body>
 </html>

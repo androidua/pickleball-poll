@@ -115,6 +115,11 @@
             color: #721c24;
         }
         
+        .loading {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
         .results-link {
             text-align: center;
             margin-top: 20px;
@@ -129,10 +134,30 @@
         .results-link a:hover {
             text-decoration: underline;
         }
+        
+        .config-notice {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #856404;
+        }
+        
+        .config-notice strong {
+            display: block;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="config-notice" id="configNotice">
+            <strong>⚠️ Configuration Required</strong>
+            Please edit this file and add your JSONBin.io API key and bin ID. See README for instructions.
+        </div>
+        
         <h1>What matters most when choosing a pickleball venue?</h1>
         
         <form id="pollForm">
@@ -172,20 +197,79 @@
     </div>
 
     <script>
-        // Initialize votes in localStorage if not exists
-        if (!localStorage.getItem('pollVotes')) {
-            const initialVotes = {
-                "Court quality": 0,
-                "Location convenience": 0,
-                "Price or affordability": 0,
-                "Social atmosphere": 0,
-                "Coaching or events availability": 0
-            };
-            localStorage.setItem('pollVotes', JSON.stringify(initialVotes));
+        // ========================================
+        // CONFIGURATION - EDIT THESE VALUES
+        // ========================================
+        const CONFIG = {
+            JSONBIN_API_KEY: 'YOUR_API_KEY_HERE', // Get from https://jsonbin.io
+            BIN_ID: 'YOUR_BIN_ID_HERE' // Your bin ID after creating it
+        };
+        // ========================================
+        
+        const API_URL = `https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}`;
+        
+        // Check if configured
+        if (CONFIG.JSONBIN_API_KEY === 'YOUR_API_KEY_HERE' || CONFIG.BIN_ID === 'YOUR_BIN_ID_HERE') {
+            document.getElementById('configNotice').style.display = 'block';
+        } else {
+            document.getElementById('configNotice').style.display = 'none';
         }
-
-        document.getElementById('pollForm').addEventListener('submit', function(e) {
+        
+        async function getVotes() {
+            try {
+                const response = await fetch(API_URL + '/latest', {
+                    headers: {
+                        'X-Master-Key': CONFIG.JSONBIN_API_KEY
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch votes');
+                }
+                
+                const data = await response.json();
+                return data.record;
+            } catch (error) {
+                console.error('Error fetching votes:', error);
+                return {
+                    "Court quality": 0,
+                    "Location convenience": 0,
+                    "Price or affordability": 0,
+                    "Social atmosphere": 0,
+                    "Coaching or events availability": 0
+                };
+            }
+        }
+        
+        async function updateVotes(votes) {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': CONFIG.JSONBIN_API_KEY
+                    },
+                    body: JSON.stringify(votes)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to update votes');
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Error updating votes:', error);
+                return false;
+            }
+        }
+        
+        document.getElementById('pollForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            if (CONFIG.JSONBIN_API_KEY === 'YOUR_API_KEY_HERE' || CONFIG.BIN_ID === 'YOUR_BIN_ID_HERE') {
+                showMessage('Please configure your API key and Bin ID first. See README for instructions.', 'error');
+                return;
+            }
             
             const selectedOption = document.querySelector('input[name="poll"]:checked');
             
@@ -194,27 +278,33 @@
                 return;
             }
             
-            // Get current votes
-            const votes = JSON.parse(localStorage.getItem('pollVotes'));
+            // Show loading message
+            showMessage('Submitting your vote...', 'loading');
+            
+            // Get current votes from server
+            const votes = await getVotes();
             
             // Increment the selected option
             votes[selectedOption.value]++;
             
-            // Save back to localStorage
-            localStorage.setItem('pollVotes', JSON.stringify(votes));
+            // Update votes on server
+            const success = await updateVotes(votes);
             
-            // Show success message
-            showMessage('Thank you for voting!', 'success');
-            
-            // Disable form
-            document.getElementById('pollForm').querySelectorAll('input, button').forEach(el => {
-                el.disabled = true;
-            });
-            
-            // Redirect to results after 2 seconds
-            setTimeout(() => {
-                window.location.href = 'results.html';
-            }, 2000);
+            if (success) {
+                showMessage('Thank you for voting!', 'success');
+                
+                // Disable form
+                document.getElementById('pollForm').querySelectorAll('input, button').forEach(el => {
+                    el.disabled = true;
+                });
+                
+                // Redirect to results after 2 seconds
+                setTimeout(() => {
+                    window.location.href = 'results.html';
+                }, 2000);
+            } else {
+                showMessage('Failed to submit vote. Please try again.', 'error');
+            }
         });
         
         function showMessage(text, type) {
