@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poll Results - Pickleball Venue</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .total-votes {
+            text-align: center;
+            font-size: 18px;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+        
+        .result-item {
+            margin-bottom: 25px;
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .option-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .vote-count {
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .bar-container {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+        }
+        
+        .percentage {
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            border-radius: 10px;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 2px solid #e9ecef;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Poll Results</h1>
+        <p class="subtitle">What matters most when choosing a pickleball venue?</p>
+        
+        <div class="total-votes" id="totalVotes">Total Votes: 0</div>
+        
+        <div id="results"></div>
+        
+        <div class="controls">
+            <button class="btn btn-primary" onclick="window.location.href='index.html'">Back to Poll</button>
+            <button class="btn btn-secondary" onclick="refreshResults()">Refresh</button>
+            <button class="btn btn-danger" onclick="resetPoll()">Reset Poll</button>
+        </div>
+    </div>
+
+    <script>
+        function displayResults() {
+            const votes = JSON.parse(localStorage.getItem('pollVotes')) || {
+                "Court quality": 0,
+                "Location convenience": 0,
+                "Price or affordability": 0,
+                "Social atmosphere": 0,
+                "Coaching or events availability": 0
+            };
+            
+            const totalVotes = Object.values(votes).reduce((a, b) => a + b, 0);
+            
+            document.getElementById('totalVotes').textContent = `Total Votes: ${totalVotes}`;
+            
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+            
+            Object.entries(votes).forEach(([option, count]) => {
+                const percentage = totalVotes > 0 ? ((count / totalVotes) * 100).toFixed(1) : 0;
+                
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+                resultItem.innerHTML = `
+                    <div class="result-header">
+                        <span class="option-name">${option}</span>
+                        <span class="vote-count">${count} vote${count !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div class="bar-container">
+                        <div class="bar" style="width: ${percentage}%">
+                            <span class="percentage">${percentage}%</span>
+                        </div>
+                    </div>
+                `;
+                
+                resultsDiv.appendChild(resultItem);
+            });
+        }
+        
+        function refreshResults() {
+            displayResults();
+        }
+        
+        function resetPoll() {
+            if (confirm('Are you sure you want to reset all poll data? This cannot be undone.')) {
+                const initialVotes = {
+                    "Court quality": 0,
+                    "Location convenience": 0,
+                    "Price or affordability": 0,
+                    "Social atmosphere": 0,
+                    "Coaching or events availability": 0
+                };
+                localStorage.setItem('pollVotes', JSON.stringify(initialVotes));
+                displayResults();
+            }
+        }
+        
+        // Display results on load
+        displayResults();
+        
+        // Auto-refresh every 5 seconds
+        setInterval(displayResults, 5000);
+    </script>
+</body>
+</html>

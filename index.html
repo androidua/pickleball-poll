@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pickleball Venue Poll</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+            text-align: center;
+        }
+        
+        .poll-option {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+        
+        .poll-option:hover {
+            border-color: #667eea;
+            background: #f0f2ff;
+            transform: translateX(5px);
+        }
+        
+        .poll-option input[type="radio"] {
+            margin-right: 15px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .poll-option label {
+            cursor: pointer;
+            font-size: 16px;
+            color: #333;
+            flex: 1;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: transform 0.2s ease;
+        }
+        
+        .submit-btn:hover {
+            transform: scale(1.02);
+        }
+        
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .message {
+            text-align: center;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .results-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .results-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .results-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>What matters most when choosing a pickleball venue?</h1>
+        
+        <form id="pollForm">
+            <div class="poll-option">
+                <input type="radio" id="option1" name="poll" value="Court quality">
+                <label for="option1">Court quality</label>
+            </div>
+            
+            <div class="poll-option">
+                <input type="radio" id="option2" name="poll" value="Location convenience">
+                <label for="option2">Location convenience</label>
+            </div>
+            
+            <div class="poll-option">
+                <input type="radio" id="option3" name="poll" value="Price or affordability">
+                <label for="option3">Price or affordability</label>
+            </div>
+            
+            <div class="poll-option">
+                <input type="radio" id="option4" name="poll" value="Social atmosphere">
+                <label for="option4">Social atmosphere</label>
+            </div>
+            
+            <div class="poll-option">
+                <input type="radio" id="option5" name="poll" value="Coaching or events availability">
+                <label for="option5">Coaching or events availability</label>
+            </div>
+            
+            <button type="submit" class="submit-btn">Submit Vote</button>
+        </form>
+        
+        <div id="message"></div>
+        
+        <div class="results-link">
+            <a href="results.html">View Results</a>
+        </div>
+    </div>
+
+    <script>
+        // Initialize votes in localStorage if not exists
+        if (!localStorage.getItem('pollVotes')) {
+            const initialVotes = {
+                "Court quality": 0,
+                "Location convenience": 0,
+                "Price or affordability": 0,
+                "Social atmosphere": 0,
+                "Coaching or events availability": 0
+            };
+            localStorage.setItem('pollVotes', JSON.stringify(initialVotes));
+        }
+
+        document.getElementById('pollForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const selectedOption = document.querySelector('input[name="poll"]:checked');
+            
+            if (!selectedOption) {
+                showMessage('Please select an option', 'error');
+                return;
+            }
+            
+            // Get current votes
+            const votes = JSON.parse(localStorage.getItem('pollVotes'));
+            
+            // Increment the selected option
+            votes[selectedOption.value]++;
+            
+            // Save back to localStorage
+            localStorage.setItem('pollVotes', JSON.stringify(votes));
+            
+            // Show success message
+            showMessage('Thank you for voting!', 'success');
+            
+            // Disable form
+            document.getElementById('pollForm').querySelectorAll('input, button').forEach(el => {
+                el.disabled = true;
+            });
+            
+            // Redirect to results after 2 seconds
+            setTimeout(() => {
+                window.location.href = 'results.html';
+            }, 2000);
+        });
+        
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = 'message ' + type;
+        }
+    </script>
+</body>
+</html>
