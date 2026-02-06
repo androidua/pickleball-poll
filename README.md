@@ -52,10 +52,10 @@ This version uses **JSONBin.io** as a free backend to store votes centrally. You
 4. Give it a name like "Pickleball Poll"
 5. **Copy the API key** (starts with `$2a$10$...`)
 
-### Step 4: Configure Your Files
+### Step 4: Configure Your Credentials
 
-1. Open **index.html** in a text editor
-2. Find this section near the top of the `<script>` tag:
+1. Open **config.js** in a text editor
+2. Replace the placeholder values with your actual credentials:
 ```javascript
 const CONFIG = {
     JSONBIN_API_KEY: 'YOUR_API_KEY_HERE',
@@ -64,7 +64,6 @@ const CONFIG = {
 ```
 3. Replace `YOUR_API_KEY_HERE` with your actual API key
 4. Replace `YOUR_BIN_ID_HERE` with your actual Bin ID
-5. **Do the same for results.html** (same configuration section)
 
 **Example:**
 ```javascript
@@ -73,6 +72,8 @@ const CONFIG = {
     BIN_ID: '67abc123def456789'
 };
 ```
+
+> **Note:** Both `index.html` and `results.html` load credentials from `config.js`, so you only need to edit this one file. A `config.example.js` template is also provided for reference.
 
 ---
 
@@ -84,7 +85,7 @@ const CONFIG = {
 3. Make it **public**
 
 ### Step 2: Upload Files
-1. Upload both **index.html** and **results.html** to your repository
+1. Upload **index.html**, **results.html**, and **config.js** to your repository
 2. You can drag and drop them on GitHub
 
 ### Step 3: Enable GitHub Pages
@@ -127,7 +128,7 @@ Share the poll URL with your friends!
 ## Troubleshooting
 
 **Problem: "Configuration Required" warning shows**
-- Make sure you've replaced `YOUR_API_KEY_HERE` and `YOUR_BIN_ID_HERE` in BOTH files
+- Make sure you've replaced `YOUR_API_KEY_HERE` and `YOUR_BIN_ID_HERE` in `config.js`
 
 **Problem: Votes not showing up**
 - Check browser console for errors (F12 → Console tab)
@@ -167,6 +168,8 @@ The code structure is simple to modify - just update the `getVotes()` and `updat
 
 - `index.html` - Main poll page where users vote
 - `results.html` - Results page showing live vote distribution
+- `config.js` - Your JSONBin credentials (edit this file)
+- `config.example.js` - Template with placeholder values for reference
 - `README.md` - This file with setup instructions
 
 ---
@@ -174,8 +177,8 @@ The code structure is simple to modify - just update the `getVotes()` and `updat
 ## Questions?
 
 If you run into issues:
-1. Double-check your API key and Bin ID are copied correctly
-2. Make sure you configured BOTH index.html and results.html
+1. Double-check your API key and Bin ID are copied correctly in `config.js`
+2. Make sure `config.js` is uploaded to your repository alongside the HTML files
 3. Verify the bin was created with the correct JSON structure
 4. Check browser console for error messages
 
